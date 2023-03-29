@@ -1,3 +1,3 @@
-FROM amazoncorretto:11-alpine-jdk
-COPY target/*.jar statistic-server.jar
+FROM openjdk
+COPY target/statistic_service-0.0.1-SNAPSHOT.jar statistic-server.jar
 ENTRYPOINT ["java","-jar","/statistic-server.jar"]
