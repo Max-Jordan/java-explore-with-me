@@ -5,7 +5,7 @@ import lombok.NoArgsConstructor;
 import ru.practicum.statistic.RequestStatDto;
 import ru.practicum.statistic.ResponseStatDto;
 import ru.practicum.statistics.model.Log;
-import ru.practicum.statistics.model.LogResp;
+import ru.practicum.statistics.model.ViewStat;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class LogMapper {
@@ -19,7 +19,7 @@ public class LogMapper {
         return log;
     }
 
-    public static ResponseStatDto makeResponseDto(LogResp log) {
+    public static ResponseStatDto makeResponseDto(ViewStat log) {
         ResponseStatDto dto = new ResponseStatDto();
         dto.setApp(log.getApp());
         dto.setHits(log.getHits());

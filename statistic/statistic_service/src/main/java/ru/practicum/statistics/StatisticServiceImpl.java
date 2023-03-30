@@ -15,9 +15,9 @@ import static ru.practicum.statistics.mapper.LogMapper.makeLog;
 @org.springframework.stereotype.Service
 @RequiredArgsConstructor
 @Transactional
-public class ServiceImpl implements Service {
+public class StatisticServiceImpl implements StatisticService {
 
-    private final Repository rep;
+    private final StatisticRepository rep;
 
     @Override
     @Transactional
@@ -28,21 +28,15 @@ public class ServiceImpl implements Service {
     @Override
     public List<ResponseStatDto> getStatistics(LocalDateTime start, LocalDateTime end, List<String> uris, boolean unique) {
         if (unique) {
-            if (uris.isEmpty()) {
-                return rep.findAllUniqueStatisticsWithoutUris(start, end).stream()
-                        .map(LogMapper::makeResponseDto)
-                        .collect(Collectors.toList());
-            }
-            return rep.findAllUniqueStatistics(start, end, uris).stream()
+            return uris.isEmpty() ? rep.findAllUniqueStatisticsWithoutUris(start, end).stream()
+                    .map(LogMapper::makeResponseDto)
+                    .collect(Collectors.toList()) : rep.findAllUniqueStatistics(start, end, uris).stream()
                     .map(LogMapper::makeResponseDto)
                     .collect(Collectors.toList());
         } else {
-            if (uris.isEmpty()) {
-                return rep.findAllStatisticWithoutUris(start, end).stream()
-                        .map(LogMapper::makeResponseDto)
-                        .collect(Collectors.toList());
-            }
-            return rep.findAllStatistics(start, end, uris).stream()
+            return uris.isEmpty() ? rep.findAllStatisticWithoutUris(start, end).stream()
+                    .map(LogMapper::makeResponseDto)
+                    .collect(Collectors.toList()) : rep.findAllStatistics(start, end, uris).stream()
                     .map(LogMapper::makeResponseDto)
                     .collect(Collectors.toList());
         }

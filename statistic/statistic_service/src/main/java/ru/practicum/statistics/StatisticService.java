@@ -6,7 +6,7 @@ import ru.practicum.statistic.ResponseStatDto;
 import java.time.LocalDateTime;
 import java.util.List;
 
-public interface Service {
+public interface StatisticService {
 
     void save(RequestStatDto dto);
 

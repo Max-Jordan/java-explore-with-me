@@ -27,8 +27,7 @@ public class StatisticClient {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<RequestStatDto> requestEntity = new HttpEntity<>(stat, headers);
-        restTemplate.exchange(URL + "hit", HttpMethod.POST, requestEntity, RequestStatDto
-                .class);
+        restTemplate.exchange(URL + "hit", HttpMethod.POST, requestEntity, RequestStatDto.class);
     }
 
     public ResponseEntity<List<RequestStatDto>> getStatistics(LocalDateTime start, LocalDateTime end, List<String> uris,

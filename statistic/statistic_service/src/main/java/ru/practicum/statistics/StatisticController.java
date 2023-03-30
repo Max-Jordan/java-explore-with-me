@@ -14,9 +14,9 @@ import java.util.List;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-public class Controller {
+public class StatisticController {
 
-    private final Service service;
+    private final StatisticService service;
 
     @PostMapping("/hit")
     @ResponseStatus(HttpStatus.CREATED)

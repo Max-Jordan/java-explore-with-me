@@ -9,7 +9,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class LogResp {
+public class ViewStat {
     private String app;
     private String uri;
     private long hits;
