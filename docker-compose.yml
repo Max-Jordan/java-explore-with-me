@@ -10,7 +10,7 @@ services:
     depends_on:
       - stats-db
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/statistic
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://stats-db:5432/statistic
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
 
@@ -36,7 +36,7 @@ services:
       - ewm-db
       - stats-server
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/main
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://ewm-db:5432/main
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
   ewm-db:

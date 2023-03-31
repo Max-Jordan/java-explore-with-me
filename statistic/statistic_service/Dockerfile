@@ -1,3 +1,3 @@
 FROM openjdk
-COPY target/*.jar statistic-server.jar
-ENTRYPOINT ["java","-jar","/statistic-server.jar"]
+COPY target/*.jar statistic-service.jar
+ENTRYPOINT ["java","-jar","/statistic-service.jar"]
