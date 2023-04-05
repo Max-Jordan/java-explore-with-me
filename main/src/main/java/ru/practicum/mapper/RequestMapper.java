@@ -2,7 +2,7 @@ package ru.practicum.mapper;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import ru.practicum.request.RequestDto;
+import ru.practicum.request.dto.RequestDto;
 import ru.practicum.request.model.Request;
 
 @NoArgsConstructor(access = AccessLevel.PACKAGE)

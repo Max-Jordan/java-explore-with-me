@@ -5,7 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import ru.practicum.event.model.Event;
-import ru.practicum.request.StatusRequest;
+import ru.practicum.request.dto.StatusRequest;
 import ru.practicum.user.model.User;
 
 import javax.persistence.*;

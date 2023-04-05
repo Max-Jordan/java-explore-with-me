@@ -2,8 +2,10 @@ package ru.practicum.request;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import ru.practicum.request.dto.RequestDto;
+import ru.practicum.request.dto.StatusRequest;
 import ru.practicum.event.EventRepository;
-import ru.practicum.event.enums.StatusEvent;
+import ru.practicum.event.dto.enums.StatusEvent;
 import ru.practicum.event.model.Event;
 import ru.practicum.exception.NotFoundException;
 import ru.practicum.exception.RequestException;

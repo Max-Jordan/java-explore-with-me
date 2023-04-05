@@ -3,14 +3,12 @@ package ru.practicum.mapper;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.SneakyThrows;
-import org.springframework.stereotype.Component;
-import ru.practicum.event.*;
+import ru.practicum.event.dto.*;
 import ru.practicum.event.model.Event;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
-@Component
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class EventMapper {
 

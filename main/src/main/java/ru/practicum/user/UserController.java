@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import ru.practicum.user.dto.UserDto;
 
 import javax.validation.Valid;
 import javax.validation.constraints.Positive;
@@ -26,8 +27,8 @@ public class UserController {
 
     @GetMapping
     public List<UserDto> getUsers(@RequestParam List<Long> id,
-                                  @PositiveOrZero @RequestParam(defaultValue = "0") Integer from,
-                                  @Positive @RequestParam(defaultValue = "10") Integer size) {
+                                  @PositiveOrZero @RequestParam(defaultValue = "0", required = false) Integer from,
+                                  @Positive @RequestParam(defaultValue = "10", required = false) Integer size) {
         log.info("Was received a request to find users with params: id={}, from={}, size={}", id, from, size);
         return service.findUsers(id, from, size);
     }

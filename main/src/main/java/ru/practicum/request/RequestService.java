@@ -1,5 +1,8 @@
 package ru.practicum.request;
 
+import ru.practicum.request.dto.RequestDto;
+import ru.practicum.request.dto.StatusRequest;
+
 import java.util.List;
 
 public interface RequestService {

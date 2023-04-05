@@ -1,4 +1,4 @@
-package ru.practicum.event;
+package ru.practicum.event.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
@@ -6,7 +6,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import ru.practicum.constants.DatePattern;
-import ru.practicum.event.enums.StateActionForUser;
+import ru.practicum.event.dto.enums.StateActionForAdmin;
+import ru.practicum.event.model.Location;
 
 import javax.validation.constraints.Size;
 import java.time.LocalDateTime;
@@ -15,7 +16,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Getter
 @Setter
-public class UpdateEventUserRequest {
+public class UpdateEventAdminRequest {
     @Size(min = 20, max = 2000)
     private String annotation;
     private Long category;
@@ -27,7 +28,8 @@ public class UpdateEventUserRequest {
     private Boolean paid;
     private Long participantLimit;
     private Boolean requestModeration;
-    private StateActionForUser stateAction;
+    private StateActionForAdmin stateAction;
     @Size(min = 3, max = 120)
     private String title;
 }
+

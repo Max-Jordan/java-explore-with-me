@@ -4,7 +4,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import ru.practicum.event.enums.StatusEvent;
+import ru.practicum.event.dto.EventDto;
+import ru.practicum.event.dto.UpdateEventAdminRequest;
+import ru.practicum.event.dto.enums.StatusEvent;
 
 import javax.validation.Valid;
 import java.util.List;

@@ -1,7 +1,7 @@
-package ru.practicum.compilations;
+package ru.practicum.compilations.dto;
 
 import lombok.*;
-import ru.practicum.event.EventShortDto;
+import ru.practicum.event.dto.EventShortDto;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;

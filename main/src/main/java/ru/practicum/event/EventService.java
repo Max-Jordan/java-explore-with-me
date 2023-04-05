@@ -1,11 +1,12 @@
 package ru.practicum.event;
 
-import ru.practicum.event.enums.SortEvent;
-import ru.practicum.event.enums.StatusEvent;
+import ru.practicum.event.dto.*;
+import ru.practicum.event.dto.enums.SortEvent;
+import ru.practicum.event.dto.enums.StatusEvent;
 import ru.practicum.event.model.Event;
-import ru.practicum.request.RequestDto;
-import ru.practicum.request.StatusRequestUpdateResponse;
-import ru.practicum.request.UpdateRequestStatusDto;
+import ru.practicum.request.dto.RequestDto;
+import ru.practicum.request.dto.StatusRequestUpdateResponse;
+import ru.practicum.request.dto.UpdateRequestStatusDto;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;

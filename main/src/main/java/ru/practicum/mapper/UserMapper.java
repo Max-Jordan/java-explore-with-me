@@ -3,8 +3,8 @@ package ru.practicum.mapper;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.springframework.stereotype.Component;
-import ru.practicum.user.UserDto;
-import ru.practicum.user.UserShortDto;
+import ru.practicum.user.dto.UserDto;
+import ru.practicum.user.dto.UserShortDto;
 import ru.practicum.user.model.User;
 
 @Component

@@ -4,9 +4,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import ru.practicum.request.RequestDto;
-import ru.practicum.request.StatusRequestUpdateResponse;
-import ru.practicum.request.UpdateRequestStatusDto;
+import ru.practicum.event.dto.EventDto;
+import ru.practicum.event.dto.EventShortDto;
+import ru.practicum.event.dto.NewEventDto;
+import ru.practicum.event.dto.UpdateEventUserRequest;
+import ru.practicum.request.dto.RequestDto;
+import ru.practicum.request.dto.StatusRequestUpdateResponse;
+import ru.practicum.request.dto.UpdateRequestStatusDto;
 
 import javax.validation.Valid;
 import java.util.List;
