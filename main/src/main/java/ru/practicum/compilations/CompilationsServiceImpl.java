@@ -3,7 +3,7 @@ package ru.practicum.compilations;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.practicum.compilations.model.Compilations;
+import ru.practicum.compilations.model.Compilation;
 import ru.practicum.event.EventRepository;
 import ru.practicum.event.model.Event;
 import ru.practicum.exception.NotFoundException;
@@ -34,7 +34,7 @@ public class CompilationsServiceImpl implements CompilationsService {
             events = eventRepository.findAllById(dto.getEvents());
         }
         Set<Event> eventSet = new HashSet<>(events);
-        Compilations compilation = CompilationsMapper.makeCompilation(dto);
+        Compilation compilation = CompilationsMapper.makeCompilation(dto);
         compilation.setEvents(eventSet);
         return makeCompilationDto(repository.save(compilation));
     }
@@ -49,7 +49,7 @@ public class CompilationsServiceImpl implements CompilationsService {
     @Override
     @Transactional
     public CompilationDto update(Long compId, UpdateCompilationRequest updateCompilationRequest) {
-        Compilations compilation = checkCompilation(compId);
+        Compilation compilation = checkCompilation(compId);
         if (updateCompilationRequest.getPinned() != null) {
             compilation.setPinned(updateCompilationRequest.getPinned());
         }
@@ -76,7 +76,7 @@ public class CompilationsServiceImpl implements CompilationsService {
         return makeCompilationDto(checkCompilation(compId));
     }
 
-    private Compilations checkCompilation(Long compId) {
+    private Compilation checkCompilation(Long compId) {
         return repository.findById(compId).orElseThrow(
                 () -> new NotFoundException("Compilation with id: " + compId + "was not found"));
     }
