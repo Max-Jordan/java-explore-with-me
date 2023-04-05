@@ -7,6 +7,7 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import ru.practicum.statistic.RequestStatDto;
+import ru.practicum.statistic.ResponseStatDto;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -30,8 +31,8 @@ public class StatisticClient {
         restTemplate.exchange(URL + "hit", HttpMethod.POST, requestEntity, RequestStatDto.class);
     }
 
-    public ResponseEntity<List<RequestStatDto>> getStatistics(LocalDateTime start, LocalDateTime end, List<String> uris,
-                                                              Boolean unique) {
+    public ResponseEntity<List<ResponseStatDto>> getStatistics(LocalDateTime start, LocalDateTime end, List<String> uris,
+                                                               Boolean unique) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setAccept(List.of(MediaType.APPLICATION_JSON));
@@ -52,8 +53,8 @@ public class StatisticClient {
                 "unique", unique);
 
         String uri = URL + "stats" + "?start={start}&end={end}&uris={uris}&unique={unique}";
-        return restTemplate.exchange(uri, HttpMethod.GET, requestEntity,
-                new ParameterizedTypeReference<List<RequestStatDto>>() {
-                }, parameters);
+
+        return restTemplate.exchange(uri, HttpMethod.GET, requestEntity, new ParameterizedTypeReference<>() {},
+                parameters);
     }
 }
