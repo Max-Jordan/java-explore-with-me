@@ -20,6 +20,7 @@ import static ru.practicum.mapper.UserMapper.makeUserDto;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository repository;
+
     @Override
     @Transactional
     public UserDto saveUser(UserDto dto) {
@@ -28,12 +29,13 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<UserDto> findUsers(List<Long> id, Integer from, Integer size) {
-        return id.isEmpty() ? repository.findAll(makePageable(from,size)).stream()
+        return id.isEmpty() ? repository.findAll(makePageable(from, size)).stream()
                 .map(UserMapper::makeUserDto)
                 .collect(Collectors.toList()) : repository.findAllById(id).stream()
                 .map(UserMapper::makeUserDto)
                 .collect(Collectors.toList());
     }
+
     @Override
     public void deleteUser(Long id) {
         repository.delete(repository.findById(id).orElseThrow(() -> new NotFoundException("User with id: " + id +

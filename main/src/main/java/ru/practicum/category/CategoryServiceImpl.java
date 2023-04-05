@@ -14,9 +14,10 @@ import static ru.practicum.mapper.PaginationMapper.makePageable;
 
 @RequiredArgsConstructor
 @Service
-public class CategoryServiceImpl implements CategoryService{
+public class CategoryServiceImpl implements CategoryService {
 
     private final CategoryRepository repository;
+
     @Override
     public List<CategoryDto> getCategories(Integer from, Integer size) {
         return repository.findAll(makePageable(from, size)).stream()
