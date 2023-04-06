@@ -2,6 +2,7 @@ package ru.practicum.request;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.request.dto.RequestDto;
 
@@ -16,18 +17,21 @@ public class RequestController {
     private final RequestService service;
 
     @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
     public RequestDto saveRequest(@Positive @PathVariable Long userId, @Positive @RequestParam Long eventId) {
         log.info("Received a request to add request from " + userId + " to event " + eventId);
         return service.saveRequest(userId, eventId);
     }
 
     @GetMapping
+    @ResponseStatus(HttpStatus.OK)
     public List<RequestDto> getRequests(@Positive @PathVariable Long userId) {
         log.info("Received a request to get requests from the user " + userId);
         return service.getRequestsByUserId(userId);
     }
 
     @PatchMapping("/{requestId}/cancel")
+    @ResponseStatus(HttpStatus.OK)
     public RequestDto cancelRequest(@Positive @PathVariable Long userId, @Positive@PathVariable Long requestId) {
         log.info("Received a requests to cancel request with id " + requestId + " from user " + userId);
         return service.cancelRequest(userId, requestId);

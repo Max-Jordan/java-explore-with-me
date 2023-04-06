@@ -2,6 +2,7 @@ package ru.practicum.category;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.category.dto.CategoryDto;
@@ -20,6 +21,7 @@ public class PublicCategoryController {
     private final CategoryService service;
 
     @GetMapping
+    @ResponseStatus(HttpStatus.OK)
     public List<CategoryDto> getCategories(@PositiveOrZero @RequestParam(required = false, defaultValue = "0") Integer from,
                                            @Positive @RequestParam(required = false, defaultValue = "10") Integer size) {
         log.info("Wac received a request to get categories");
@@ -27,6 +29,7 @@ public class PublicCategoryController {
     }
 
     @GetMapping("/{catId}")
+    @ResponseStatus(HttpStatus.OK)
     public CategoryDto getCategory(@PathVariable Long catId) {
         log.info("Was received a request to get category with id {}", catId);
         return service.getCategory(catId);

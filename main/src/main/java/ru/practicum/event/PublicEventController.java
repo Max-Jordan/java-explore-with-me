@@ -2,6 +2,7 @@ package ru.practicum.event;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.event.dto.EventDto;
@@ -21,12 +22,14 @@ public class PublicEventController {
     private final EventService service;
 
     @GetMapping("/{id}")
+    @ResponseStatus(HttpStatus.OK)
     public EventDto getEventById(@Positive @PathVariable Long id) {
         log.info("Received a request to view the event {} without authorization", id);
         return service.getEventById(id);
     }
 
     @GetMapping
+    @ResponseStatus(HttpStatus.OK)
     public List<EventDto> getEventsWithParametersByUser(@RequestParam(name = "text", required = false) String text,
                                                     @RequestParam(name = "categories",
                                                             required = false) List<Long> categories,
