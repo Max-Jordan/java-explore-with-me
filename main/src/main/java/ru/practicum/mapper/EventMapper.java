@@ -71,10 +71,10 @@ public class EventMapper {
                 if (fieldTo.getName().equals(fieldFrom.getName()) && String.valueOf(fieldTo.getType()).endsWith("Dto")) {
                     Method getterMethod = from.getClass().getMethod(getter);
                     Object field = getterMethod.invoke(from);
-                    if(field.getClass().equals(Category.class)) {
+                    if (field.getClass().equals(Category.class)) {
                         to.getClass().getMethod(setter, CategoryDto.class).invoke(to, makeCategoryDto((Category) field));
                     }
-                    if(field.getClass().equals(User.class)) {
+                    if (field.getClass().equals(User.class)) {
                         to.getClass().getMethod(setter, UserShortDto.class).invoke(to, makeUserShortDto((User) field));
 
                     }
