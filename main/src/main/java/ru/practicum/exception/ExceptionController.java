@@ -2,6 +2,7 @@ package ru.practicum.exception;
 
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -63,5 +64,13 @@ public class ExceptionController {
     public ApiError eventExceptionHandler(final EventException e) {
         return new ApiError(e.getMessage(), "Event exception", HttpStatus.CREATED.getReasonPhrase(),
                 LocalDateTime.now().format(dateFormatter));
+    }
+
+    @ExceptionHandler
+    @ResponseBody
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiError handleHttpMessageNotReadableException(final HttpMessageNotReadableException e) {
+        return new ApiError(e.getMessage(), "The required data was not sent in the request",
+                HttpStatus.CREATED.getReasonPhrase(), LocalDateTime.now().format(dateFormatter));
     }
 }
