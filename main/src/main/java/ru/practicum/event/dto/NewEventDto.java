@@ -8,6 +8,7 @@ import lombok.Setter;
 import ru.practicum.constants.DatePattern;
 import ru.practicum.event.model.Location;
 
+import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.time.LocalDateTime;
@@ -17,12 +18,12 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 public class NewEventDto {
-    @NotNull
+    @NotBlank
     @Size(min = 20, max = 2000)
     private String annotation;
     @NotNull
     private Long category;
-    @NotNull
+    @NotBlank
     @Size(min = 20, max = 7000)
     private String description;
     @NotNull

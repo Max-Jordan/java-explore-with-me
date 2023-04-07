@@ -27,7 +27,10 @@ public class UserMapper {
         return dto;
     }
 
-    public static UserShortDto makeUserShortDto() {
-        return null;
+    public static UserShortDto makeUserShortDto(User user) {
+        UserShortDto dto = new UserShortDto();
+        dto.setId(user.getId());
+        dto.setName(user.getName());
+        return dto;
     }
 }
