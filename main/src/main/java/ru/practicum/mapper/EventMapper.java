@@ -51,13 +51,13 @@ public class EventMapper {
                     }
                     break;
                 }
-                if(fieldTo.getName().equals(fieldFrom.getName()) && fieldFrom.getType().equals(LocalDateTime.class)) {
+                if (fieldTo.getName().equals(fieldFrom.getName()) && fieldFrom.getType().equals(LocalDateTime.class)) {
                     String setter = "set" + fieldTo.getName().substring(0, 1).toUpperCase() + fieldTo.getName().substring(1);
                     String getter = "get" + fieldTo.getName().substring(0, 1).toUpperCase() + fieldTo.getName().substring(1);
                     Method getterMethod = from.getClass().getMethod(getter);
                     Method setterMethod = to.getClass().getMethod(setter, String.class);
                     Object field = getterMethod.invoke(from);
-                    if(field != null && field.getClass().equals(LocalDateTime.class)) {
+                    if (field != null && field.getClass().equals(LocalDateTime.class)) {
                         LocalDateTime time = LocalDateTime.parse(field.toString());
                         setterMethod.invoke(to, time.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
                     }

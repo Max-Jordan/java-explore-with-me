@@ -36,7 +36,7 @@ public class RequestServiceImpl implements RequestService {
     public ParticipationRequestDto saveRequest(Long userId, Long eventId) {
         Request request = new Request();
         Event event = eventRepository.findById(eventId).orElseThrow(() -> new NotFoundException("The event doesn't exist"));
-        if(Boolean.TRUE.equals(repository.existsByRequesterIdAndEventId(userId, eventId))) {
+        if (Boolean.TRUE.equals(repository.existsByRequesterIdAndEventId(userId, eventId))) {
             throw new RequestException("The request already exists");
         }
         if (Objects.equals(event.getInitiator().getId(), userId)) {

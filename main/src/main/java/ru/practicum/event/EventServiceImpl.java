@@ -151,7 +151,7 @@ public class EventServiceImpl implements EventService {
         if (!event.getInitiator().getId().equals(checkUser(userId).getId())) {
             throw new EventException(INITIATOR_EXCEPTION);
         }
-        if(event.getState().equals(StatusEvent.PUBLISHED)) {
+        if (event.getState().equals(StatusEvent.PUBLISHED)) {
             throw new EventException("It is not possible to change the published event");
         }
         if (dto.getStateAction() != null) {
