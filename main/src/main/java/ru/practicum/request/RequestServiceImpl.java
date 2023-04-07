@@ -2,14 +2,14 @@ package ru.practicum.request;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import ru.practicum.request.dto.RequestDto;
-import ru.practicum.request.dto.StatusRequest;
 import ru.practicum.event.EventRepository;
 import ru.practicum.event.dto.enums.StatusEvent;
 import ru.practicum.event.model.Event;
 import ru.practicum.exception.NotFoundException;
 import ru.practicum.exception.RequestException;
 import ru.practicum.mapper.RequestMapper;
+import ru.practicum.request.dto.ParticipationRequestDto;
+import ru.practicum.request.dto.StatusRequest;
 import ru.practicum.request.model.Request;
 import ru.practicum.user.UserService;
 import ru.practicum.user.model.User;
@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static ru.practicum.mapper.RequestMapper.makeRequestDto;
+import static ru.practicum.mapper.RequestMapper.makeParticipationRequestDto;
 
 @Service
 @RequiredArgsConstructor
@@ -33,13 +33,16 @@ public class RequestServiceImpl implements RequestService {
 
     @Override
     @Transactional
-    public RequestDto saveRequest(Long userId, Long eventId) {
+    public ParticipationRequestDto saveRequest(Long userId, Long eventId) {
         Request request = new Request();
-        Event event = eventRepository.findById(eventId).orElseThrow(() -> new NotFoundException("Event was not found"));
+        Event event = eventRepository.findById(eventId).orElseThrow(() -> new NotFoundException("The event doesn't exist"));
+        if(Boolean.TRUE.equals(repository.existsByRequesterIdAndEventId(userId, eventId))) {
+            throw new RequestException("The request already exists");
+        }
         if (Objects.equals(event.getInitiator().getId(), userId)) {
             throw new RequestException("Initiator of event can't be requester");
         }
-        if (Objects.equals(event.getConfirmedRequests(), event.getParticipantLimit())) {
+        if (repository.findByEventId(eventId).size() == event.getParticipantLimit()) {
             throw new RequestException("Limit of request");
         }
         if (event.getState() != StatusEvent.PUBLISHED) {
@@ -53,35 +56,35 @@ public class RequestServiceImpl implements RequestService {
         request.setRequester(user);
         request.setEvent(event);
         request.setCreated(LocalDateTime.now());
-        return makeRequestDto(repository.save(request));
+        return makeParticipationRequestDto(repository.save(request));
     }
 
     @Override
-    public List<RequestDto> getRequestsByUserId(Long userId) {
+    public List<ParticipationRequestDto> getRequestsByUserId(Long userId) {
         return repository.findAllByRequesterId(userId).stream()
-                .map(RequestMapper::makeRequestDto)
+                .map(RequestMapper::makeParticipationRequestDto)
                 .collect(Collectors.toList());
     }
 
     @Override
     @Transactional
-    public RequestDto cancelRequest(Long userId, Long requestId) {
+    public ParticipationRequestDto cancelRequest(Long userId, Long requestId) {
         Request request = repository.findRequestByIdAndRequesterId(requestId, userId);
         request.setStatus(StatusRequest.CANCELED);
-        return makeRequestDto(repository.saveAndFlush(request));
+        return makeParticipationRequestDto(repository.saveAndFlush(request));
     }
 
     @Override
-    public List<RequestDto> findAllMemberRequests(Long userId, Long eventId) {
-        return repository.findAllByEventIdAndRequesterId(eventId, userId).stream()
-                .map(RequestMapper::makeRequestDto)
+    public List<ParticipationRequestDto> findAllRequests(Long eventId) {
+        return repository.findByEventId(eventId).stream()
+                .map(RequestMapper::makeParticipationRequestDto)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<RequestDto> findAllByRequestsId(List<Long> requestsId) {
+    public List<ParticipationRequestDto> findAllByRequestsId(List<Long> requestsId) {
         return repository.findAllRequestByIdIn(requestsId).stream()
-                .map(RequestMapper::makeRequestDto)
+                .map(RequestMapper::makeParticipationRequestDto)
                 .collect(Collectors.toList());
     }
 
@@ -90,5 +93,10 @@ public class RequestServiceImpl implements RequestService {
         Request request = repository.findById(idRequest).orElseThrow(() -> new NotFoundException("Request not found"));
         request.setStatus(status);
         repository.save(request);
+    }
+
+    @Override
+    public Integer findRequestByStatus(StatusRequest status) {
+        return repository.countAllByStatus(status);
     }
 }

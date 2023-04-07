@@ -11,7 +11,7 @@ import java.util.List;
 @NoArgsConstructor
 @Getter
 @Setter
-public class UpdateRequestStatusDto {
+public class EventRequestStatusUpdateRequest {
     private List<Long> requestIds;
     private StatusRequest status;
 }

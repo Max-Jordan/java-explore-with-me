@@ -4,36 +4,38 @@ import ru.practicum.event.dto.*;
 import ru.practicum.event.dto.enums.SortEvent;
 import ru.practicum.event.dto.enums.StatusEvent;
 import ru.practicum.event.model.Event;
-import ru.practicum.request.dto.RequestDto;
-import ru.practicum.request.dto.StatusRequestUpdateResponse;
-import ru.practicum.request.dto.UpdateRequestStatusDto;
+import ru.practicum.request.dto.ParticipationRequestDto;
+import ru.practicum.request.dto.EventRequestStatusUpdateResult;
+import ru.practicum.request.dto.EventRequestStatusUpdateRequest;
 
 import javax.servlet.http.HttpServletRequest;
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface EventService {
-    EventDto getEventById(Long id);
 
-    List<EventDto> getEventsWithParametersByUser(String text, List<Long> categories, Boolean paid, String rangeStart,
-                                                 String rangeEnd, boolean onlyAvailable, SortEvent sort, Integer from,
-                                                 Integer size, HttpServletRequest request);
+    EventFullDto getEvent(Long eventId, HttpServletRequest request);
 
-    List<EventDto> getEventsWithParametersByAdmin(List<Long> users, StatusEvent states, List<Long> categoriesId,
-                                                  String rangeStart, String rangeEnd, Integer from, Integer size);
+    List<EventFullDto> getEventsWithParametersByUser(String text, List<Long> categories, Boolean paid, LocalDateTime rangeStart,
+                                                     LocalDateTime rangeEnd, boolean onlyAvailable, SortEvent sort, Integer from,
+                                                     Integer size, HttpServletRequest request);
 
-    EventDto updateEvent(Long eventId, UpdateEventAdminRequest dto);
+    List<EventFullDto> getEventsWithParametersByAdmin(List<Long> users, List<StatusEvent> states, List<Long> categoriesId,
+                                                      LocalDateTime rangeStart, LocalDateTime rangeEnd, Integer from, Integer size);
 
-    EventDto saveEvent(Long userId, NewEventDto newEventDto);
+    EventFullDto updateEvent(Long eventId, UpdateEventAdminRequest dto);
+
+    EventFullDto saveEvent(Long userId, NewEventDto newEventDto);
 
     List<EventShortDto> getEventsByInitiatorId(Long userId, Integer from, Integer size);
 
-    EventDto updateEventByUser(Long userId, Long eventId, UpdateEventUserRequest dto);
+    EventFullDto updateEventByUser(Long userId, Long eventId, UpdateEventUserRequest dto);
 
-    EventDto getEventByUser(Long userId, Long eventId);
+    EventFullDto getEventByUser(Long userId, Long eventId);
 
-    StatusRequestUpdateResponse updateRequests(Long userId, Long eventId, UpdateRequestStatusDto dto);
+    EventRequestStatusUpdateResult updateRequests(Long userId, Long eventId, EventRequestStatusUpdateRequest dto);
 
-    List<RequestDto> getRequests(Long userId, Long eventId);
+    List<ParticipationRequestDto> getRequests(Long userId, Long eventId);
 
-    Event getEvent(Long eventId);
+    Event getEventById(Long id);
 }

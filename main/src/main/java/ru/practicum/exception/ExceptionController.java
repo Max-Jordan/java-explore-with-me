@@ -1,5 +1,6 @@
 package ru.practicum.exception;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -7,6 +8,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import ru.practicum.constants.DatePattern;
 
+import javax.validation.ValidationException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -20,14 +22,14 @@ public class ExceptionController {
     @ResponseBody
     public ApiError notFoundExceptionHandler(final NotFoundException e) {
         return new ApiError(e.getMessage(), "The object you are looking for does not exist.",
-                HttpStatus.NOT_FOUND.getReasonPhrase().toUpperCase(), LocalDateTime.now().format(dateFormatter));
+                HttpStatus.NOT_FOUND.getReasonPhrase(), LocalDateTime.now().format(dateFormatter));
     }
 
     @ExceptionHandler
     @ResponseBody
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseStatus(HttpStatus.CONFLICT)
     public ApiError requestExceptionHandler(final RequestException e) {
-        return new ApiError(e.getMessage(), "Bad request", HttpStatus.BAD_REQUEST.getReasonPhrase().toUpperCase(),
+        return new ApiError(e.getMessage(), "Request exception", HttpStatus.CONFLICT.getReasonPhrase(),
                 LocalDateTime.now().format(dateFormatter));
     }
 
@@ -35,7 +37,31 @@ public class ExceptionController {
     @ResponseBody
     @ResponseStatus(HttpStatus.CONFLICT)
     public ApiError timeExceptionHandler(final TimeException e) {
-        return new ApiError(e.getMessage(), "Time exception", HttpStatus.CONFLICT.getReasonPhrase().toUpperCase(),
+        return new ApiError(e.getMessage(), "Time exception", HttpStatus.CONFLICT.getReasonPhrase(),
+                LocalDateTime.now().format(dateFormatter));
+    }
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.CONFLICT)
+    @ResponseBody
+    public ApiError emailDuplicatedException(final ValidationException e) {
+        return new ApiError(e.getMessage(), "Validation exception", HttpStatus.CONFLICT.getReasonPhrase(),
+                LocalDateTime.now().format(dateFormatter));
+    }
+
+    @ExceptionHandler
+    @ResponseBody
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiError sqlExceptionHandler(final DataIntegrityViolationException e) {
+        return new ApiError(e.getMessage(), "Unique value error", HttpStatus.CONFLICT.getReasonPhrase(),
+                LocalDateTime.now().format(dateFormatter));
+    }
+
+    @ExceptionHandler
+    @ResponseBody
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiError eventExceptionHandler(final EventException e) {
+        return new ApiError(e.getMessage(), "Event exception", HttpStatus.CREATED.getReasonPhrase(),
                 LocalDateTime.now().format(dateFormatter));
     }
 }

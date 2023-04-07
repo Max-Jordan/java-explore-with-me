@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @Entity
-@Table(name = "events", schema = "public")
+@Table(name = "events")
 @NoArgsConstructor
 @AllArgsConstructor
 public class Event {
@@ -31,7 +31,7 @@ public class Event {
     private Category category;
 
     @Column
-    private Long confirmedRequests;
+    private Integer confirmedRequests;
 
     @Column(name = "created_on", nullable = false)
     private LocalDateTime createdOn;
@@ -45,9 +45,10 @@ public class Event {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "id_initiator", nullable = false)
     private User initiator;
-
-    @OneToOne
-    @JoinColumn(name = "location_id")
+    @AttributeOverrides({
+            @AttributeOverride(name = "latitude", column = @Column(name = "location_latitude")),
+            @AttributeOverride(name = "longitude", column = @Column(name = "location_longitude"))
+    })
     private Location location;
 
     @Column(nullable = false)
@@ -63,7 +64,6 @@ public class Event {
     private Boolean requestModeration;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
     private StatusEvent state;
 
     @Column(nullable = false)

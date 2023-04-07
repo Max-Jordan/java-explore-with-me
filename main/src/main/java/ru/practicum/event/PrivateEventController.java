@@ -5,13 +5,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import ru.practicum.event.dto.EventDto;
+import ru.practicum.event.dto.EventFullDto;
 import ru.practicum.event.dto.EventShortDto;
 import ru.practicum.event.dto.NewEventDto;
 import ru.practicum.event.dto.UpdateEventUserRequest;
-import ru.practicum.request.dto.RequestDto;
-import ru.practicum.request.dto.StatusRequestUpdateResponse;
-import ru.practicum.request.dto.UpdateRequestStatusDto;
+import ru.practicum.request.dto.ParticipationRequestDto;
+import ru.practicum.request.dto.EventRequestStatusUpdateResult;
+import ru.practicum.request.dto.EventRequestStatusUpdateRequest;
 
 import javax.validation.Valid;
 import java.util.List;
@@ -26,8 +26,8 @@ public class PrivateEventController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public EventDto createEvent(@PathVariable Long userId, @Valid @RequestBody NewEventDto newEventDto) {
-        return service.saveEvent(userId, newEventDto);
+    public EventFullDto createEvent(@PathVariable Long userId, @Valid @RequestBody NewEventDto dto) {
+        return service.saveEvent(userId, dto);
     }
 
     @GetMapping
@@ -35,32 +35,35 @@ public class PrivateEventController {
     public List<EventShortDto> getEventsByUser(@PathVariable Long userId,
                                                @RequestParam(name = "from", defaultValue = "0", required = false) Integer from,
                                                @RequestParam(name = "size", defaultValue = "10", required = false) Integer size) {
+        log.info("Received a request to get events by user " + userId);
         return service.getEventsByInitiatorId(userId, from, size);
     }
 
     @PatchMapping("/{eventId}")
-    public EventDto updateEventByUser(@PathVariable Long userId,
-                                      @PathVariable Long eventId,
-                                      @Valid @RequestBody UpdateEventUserRequest dto) {
+    public EventFullDto updateEventByUser(@PathVariable Long userId,
+                                          @PathVariable Long eventId,
+                                          @Valid @RequestBody UpdateEventUserRequest dto) {
+        log.info("Received a request to update event " + eventId + " from user " + userId + " " + dto);
         return service.updateEventByUser(userId, eventId, dto);
     }
 
     @GetMapping("/{eventId}")
     @ResponseStatus(HttpStatus.OK)
-    public EventDto getEventByUser(@PathVariable Long userId, @PathVariable Long eventId) {
+    public EventFullDto getEventByUser(@PathVariable Long userId, @PathVariable Long eventId) {
         return service.getEventByUser(userId, eventId);
     }
 
     @GetMapping("/{eventId}/requests")
     @ResponseStatus(HttpStatus.OK)
-    public List<RequestDto> getRequests(@PathVariable Long userId, @PathVariable Long eventId) {
+    public List<ParticipationRequestDto> getRequests(@PathVariable Long userId, @PathVariable Long eventId) {
         return service.getRequests(userId, eventId);
     }
 
     @PatchMapping("/{eventId}/requests")
     @ResponseStatus(HttpStatus.OK)
-    public StatusRequestUpdateResponse updateStatus(@PathVariable Long userId, @PathVariable Long eventId,
-                                                    @RequestBody UpdateRequestStatusDto dto) {
+    public EventRequestStatusUpdateResult updateStatus(@PathVariable Long userId, @PathVariable Long eventId,
+                                                       @RequestBody EventRequestStatusUpdateRequest dto) {
+        log.info("Received a request to update status event {} from user {} status {}", eventId, userId, dto.getStatus());
         return service.updateRequests(userId, eventId, dto);
     }
 }

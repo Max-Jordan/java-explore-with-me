@@ -2,41 +2,33 @@ package ru.practicum.event;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 import ru.practicum.StatisticClient;
 import ru.practicum.category.CategoryService;
 import ru.practicum.category.model.Category;
-import ru.practicum.constants.DatePattern;
-import ru.practicum.request.dto.RequestDto;
-import ru.practicum.request.dto.StatusRequest;
-import ru.practicum.request.dto.StatusRequestUpdateResponse;
-import ru.practicum.request.dto.UpdateRequestStatusDto;
 import ru.practicum.event.dto.*;
 import ru.practicum.event.dto.enums.SortEvent;
+import ru.practicum.event.dto.enums.StateActionForUser;
 import ru.practicum.event.dto.enums.StatusEvent;
 import ru.practicum.event.model.Event;
+import ru.practicum.exception.EventException;
 import ru.practicum.exception.NotFoundException;
-import ru.practicum.exception.RequestException;
 import ru.practicum.exception.TimeException;
 import ru.practicum.mapper.EventMapper;
-import ru.practicum.request.*;
+import ru.practicum.request.RequestService;
+import ru.practicum.request.dto.EventRequestStatusUpdateRequest;
+import ru.practicum.request.dto.EventRequestStatusUpdateResult;
+import ru.practicum.request.dto.ParticipationRequestDto;
+import ru.practicum.request.dto.StatusRequest;
 import ru.practicum.statistic.RequestStatDto;
 import ru.practicum.statistic.ResponseStatDto;
 import ru.practicum.user.UserService;
+import ru.practicum.user.model.User;
 
-import javax.persistence.EntityManager;
-import javax.persistence.TypedQuery;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
 import javax.servlet.http.HttpServletRequest;
 import javax.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -53,129 +45,93 @@ public class EventServiceImpl implements EventService {
     private final CategoryService categoryService;
     private final UserService userService;
     private final RequestService requestService;
-    private final EntityManager em;
-    private CriteriaBuilder criteriaBuilder;
-    private static final String EVENT_DATE = "eventDate";
     private static final String TIME_MESSAGE = "The event cannot start earlier than " + LocalTime.now().plusHours(2);
+    private static final String INITIATOR_EXCEPTION = "The event id does not belong to the user id";
 
     @Override
-    public EventDto getEventById(Long id) {
-        return makeEventDto(repository.findById(id).orElseThrow(() -> new NotFoundException("Event with the id " +
-                id + " was not found")));
+    public Event getEventById(Long id) {
+        return repository.findById(id).orElseThrow(() -> new NotFoundException("Event with the id " +
+                id + " was not found"));
     }
 
     @Override
-    public List<EventDto> getEventsWithParametersByUser(String text, List<Long> categories, Boolean paid, String rangeStart,
-                                                        String rangeEnd, boolean onlyAvailable, SortEvent sort, Integer from,
-                                                        Integer size, HttpServletRequest request) {
-        criteriaBuilder = em.getCriteriaBuilder();
-        CriteriaQuery<Event> query = criteriaBuilder.createQuery(Event.class);
-
-        Root<Event> root = query.from(Event.class);
-        query.select(root);
-        List<Predicate> predicates = new ArrayList<>();
-        if (StringUtils.hasText(text)) {
-            predicates.add(criteriaBuilder.or(criteriaBuilder.like(criteriaBuilder.lower(root.get("annotation")),
-                    "%" + text.toLowerCase() + "%"), criteriaBuilder.like(criteriaBuilder.lower(root.get("description")),
-                    "%" + text.toLowerCase() + "%")));
-        }
-        if (!categories.isEmpty()) {
-            predicates.add(root.get("category").in(categories));
-        }
-        if (paid != null) {
-            if (paid) {
-                predicates.add(criteriaBuilder.isTrue(root.get("paid")));
-            } else {
-                predicates.add(criteriaBuilder.isFalse(root.get("paid")));
-            }
-        }
-        if (StringUtils.hasText(rangeStart)) {
-            LocalDateTime startEvent = LocalDateTime.parse(rangeStart, DateTimeFormatter.ofPattern(DatePattern.DATE_FORMAT));
-            predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get(EVENT_DATE).as(LocalDateTime.class), startEvent));
-        }
-        if (StringUtils.hasText(rangeEnd)) {
-            LocalDateTime endEvent = LocalDateTime.parse(rangeEnd, DateTimeFormatter.ofPattern(DatePattern.DATE_FORMAT));
-            predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get(EVENT_DATE).as(LocalDateTime.class), endEvent));
-        }
-        query.select(root);
-        query.where(criteriaBuilder.and(predicates.toArray(new Predicate[0])));
-        TypedQuery<Event> typedQuery = em.createQuery(query);
-        Page<Event> page = new PageImpl<>(typedQuery.getResultList(), makePageable(from, size), size);
-        if (onlyAvailable) {
-            return page.stream().filter(e -> e.getConfirmedRequests() < e.getParticipantLimit())
-                    .map(EventMapper::makeEventDto).collect(Collectors.toList());
-        }
+    public List<EventFullDto> getEventsWithParametersByUser(String text, List<Long> categories, Boolean paid, LocalDateTime rangeStart,
+                                                            LocalDateTime rangeEnd, boolean onlyAvailable, SortEvent sort, Integer from,
+                                                            Integer size, HttpServletRequest request) {
+        rangeStart = rangeStart == null ? LocalDateTime.now() : rangeStart;
+        rangeEnd = rangeEnd == null ? LocalDateTime.now().plusHours(2) : rangeEnd;
+        List<Event> events = onlyAvailable ?
+                repository.findEventByAvailable(text, paid, rangeStart, rangeEnd, categories, makePageable(from, size))
+                        .stream()
+                        .filter(event -> event.getParticipantLimit() > requestService.findAllRequests(event.getId()).size())
+                        .collect(Collectors.toList()) :
+                repository.findAllEvent(text, paid, rangeStart, rangeEnd, categories, makePageable(from, size)).toList();
         if (sort != null) {
             if (sort.equals(SortEvent.EVENT_DATE)) {
-                return page.stream().sorted(Comparator.comparing(Event::getEventDate))
-                        .map(EventMapper::makeEventDto
-                        ).collect(Collectors.toList());
-            } else {
-                return page.stream()
-                        .sorted(Comparator.comparing(Event::getViews))
-                        .map(EventMapper::makeEventDto
-                        ).collect(Collectors.toList());
-
+                events = events.stream().sorted(Comparator.comparing(Event::getEventDate)).collect(Collectors.toList());
+            }
+            if (sort.equals(SortEvent.VIEWS)) {
+                events = events.stream().sorted(Comparator.comparing(Event::getViews)).collect(Collectors.toList());
             }
         }
-        sendStatistic(request);
-        setView(page.getContent());
-        return page.stream().map(EventMapper::makeEventDto).collect(Collectors.toList());
+        return events.stream()
+                .map(EventMapper::makeEventFullDto)
+                .collect(Collectors.toList());
     }
 
     @Override
-    public List<EventDto> getEventsWithParametersByAdmin(List<Long> users, StatusEvent states, List<Long> categoriesId,
-                                                         String rangeStart, String rangeEnd, Integer from, Integer size) {
-        em.getCriteriaBuilder();
-        CriteriaQuery<Event> query = criteriaBuilder.createQuery(Event.class);
-
-        Root<Event> root = query.from(Event.class);
-        query.select(root);
-        List<Predicate> predicates = new ArrayList<>();
-        if (!users.isEmpty()) {
-            predicates.add(root.get("initiator").in(users));
+    public List<EventFullDto> getEventsWithParametersByAdmin(List<Long> users, List<StatusEvent> states, List<Long> categoriesId,
+                                                             LocalDateTime rangeStart, LocalDateTime rangeEnd, Integer from, Integer size) {
+        Page<Event> page = repository.findEventByInitiatorIdAndStateAndCategory_IdAndEventDateBetween(users, states, categoriesId,
+                rangeStart, rangeEnd, makePageable(from, size));
+        if (page.hasContent()) {
+            setViewForList(page.getContent());
         }
-        if (states != null) {
-            predicates.add(root.get("state").in(states));
-        }
-        if (!categoriesId.isEmpty()) {
-            predicates.add(root.get("category").in(states));
-        }
-        if (rangeStart != null && rangeEnd != null) {
-            predicates.add(criteriaBuilder.between(root.get(EVENT_DATE), rangeStart, rangeEnd));
-        }
-        query.select(root);
-        query.where(criteriaBuilder.and(predicates.toArray(new Predicate[0])));
-        TypedQuery<Event> typedQuery = em.createQuery(query);
-        Page<Event> page = new PageImpl<>(typedQuery.getResultList(), makePageable(from, size), size);
-        setView(page.getContent());
-        return page.stream().map(EventMapper::makeEventDto).collect(Collectors.toList());
+        return page.stream().map(EventMapper::makeEventFullDto).collect(Collectors.toList());
     }
 
     @Override
     @Transactional
-    public EventDto updateEvent(Long eventId, UpdateEventAdminRequest dto) {
-        if (dto.getEventDate().isBefore(LocalDateTime.now().plusHours(2))) {
+    public EventFullDto updateEvent(Long eventId, UpdateEventAdminRequest dto) {
+        if (dto.getEventDate() != null && dto.getEventDate().isBefore(LocalDateTime.now().plusHours(2))) {
             throw new TimeException(TIME_MESSAGE);
         }
-        Event event = makeEventFromUpdateEventAdminRequest(getEvent(eventId), dto);
+        Event event = makeEventFromUpdateEventAdminRequest(getEventById(eventId), dto);
+        if (dto.getStateAction() != null) {
+            switch (dto.getStateAction()) {
+                case PUBLISH_EVENT:
+                    if (!event.getState().equals(StatusEvent.PENDING)) {
+                        throw new EventException("Event cannot be published");
+                    }
+                    event.setState(StatusEvent.PUBLISHED);
+                    break;
+                case REJECT_EVENT:
+                    if (event.getState().equals(StatusEvent.PUBLISHED)) {
+                        throw new EventException("It is not possible to cancel the event");
+                    }
+                    event.setState(StatusEvent.CANCELED);
+                    break;
+            }
+        }
         if (dto.getCategory() != null) {
             event.setCategory(makeCategory(categoryService.getCategory(dto.getCategory())));
         }
-        return makeEventDto(event);
+        return makeEventFullDto(event);
     }
 
     @Override
     @Transactional
-    public EventDto saveEvent(Long userId, NewEventDto dto) {
+    public EventFullDto saveEvent(Long userId, NewEventDto dto) {
         Category category = makeCategory(categoryService.getCategory(dto.getCategory()));
         if (dto.getEventDate().isBefore(LocalDateTime.now().plusHours(2))) {
             throw new TimeException(TIME_MESSAGE);
         }
         Event event = makeEvent(dto);
+        event.setCreatedOn(LocalDateTime.now());
         event.setCategory(category);
         event.setInitiator(userService.getUserById(userId));
-        return makeEventDto(repository.save(event));
+        event.setState(StatusEvent.PENDING);
+        return makeEventFullDto(repository.save(event));
     }
 
     @Override
@@ -187,60 +143,98 @@ public class EventServiceImpl implements EventService {
 
     @Override
     @Transactional
-    public EventDto updateEventByUser(Long userId, Long eventId, UpdateEventUserRequest dto) {
-        if (dto.getEventDate().isBefore(LocalDateTime.now().plusHours(2))) {
+    public EventFullDto updateEventByUser(Long userId, Long eventId, UpdateEventUserRequest dto) {
+        if (dto.getEventDate() != null && dto.getEventDate().isBefore(LocalDateTime.now().plusHours(2))) {
             throw new TimeException(TIME_MESSAGE);
         }
         Event event = makeEventFromUpdateEventUserRequest(repository.findByIdAndInitiatorId(eventId, userId), dto);
+        if (!event.getInitiator().getId().equals(checkUser(userId).getId())) {
+            throw new EventException(INITIATOR_EXCEPTION);
+        }
+        if(event.getState().equals(StatusEvent.PUBLISHED)) {
+            throw new EventException("It is not possible to change the published event");
+        }
+        if (dto.getStateAction() != null) {
+            if (dto.getStateAction().equals(StateActionForUser.SEND_TO_REVIEW)) {
+                event.setState(StatusEvent.PENDING);
+            }
+            if (dto.getStateAction().equals(StateActionForUser.CANCEL_REVIEW)) {
+                event.setState(StatusEvent.CANCELED);
+            }
+        }
         if (dto.getCategory() != null) {
             event.setCategory(makeCategory(categoryService.getCategory(dto.getCategory())));
         }
 
-        return makeEventDto(event);
+        return makeEventFullDto(event);
     }
 
     @Override
-    public EventDto getEventByUser(Long userId, Long eventId) {
-        return makeEventDto(repository.findByIdAndInitiatorId(eventId, userId));
+    public EventFullDto getEventByUser(Long userId, Long eventId) {
+        return makeEventFullDto(repository.findByIdAndInitiatorId(eventId, userId));
     }
 
     @Override
-    public StatusRequestUpdateResponse updateRequests(Long userId, Long eventId, UpdateRequestStatusDto dto) {
-        Event event = repository.findById(eventId).orElseThrow(() -> new NotFoundException("Event was not found"));
-        StatusRequestUpdateResponse result = new StatusRequestUpdateResponse();
-        if (event.getParticipantLimit() == 0 || Boolean.FALSE.equals(event.getRequestModeration())) {
-            return result;
+    @Transactional
+    public EventRequestStatusUpdateResult updateRequests(Long userId, Long eventId, EventRequestStatusUpdateRequest dto) {
+        List<ParticipationRequestDto> confirmed = new ArrayList<>();
+        List<ParticipationRequestDto> rejected = new ArrayList<>();
+        List<ParticipationRequestDto> confirmedRequests = requestService.findAllRequests(eventId);
+        Event event = getEventById(eventId);
+        if (!event.getInitiator().getId().equals(userId)) {
+            throw new EventException(INITIATOR_EXCEPTION);
         }
-        if (event.getParticipantLimit() <= event.getConfirmedRequests()) {
-            throw new RequestException("Request limit reached");
+
+        if (event.getParticipantLimit() == confirmedRequests.size()) {
+            throw new EventException("The limit of confirmed requests has been reached");
         }
-        List<RequestDto> requests = requestService.findAllByRequestsId(dto.getRequestIds());
-        for (RequestDto request : requests) {
-            if (request.getStatus() != StatusRequest.PENDING) {
-                throw new RequestException("The request has no status PENDING ");
+
+        List<ParticipationRequestDto> requests = requestService.findAllByRequestsId(dto.getRequestIds());
+        if (dto.getStatus().equals(StatusRequest.REJECTED)) {
+            rejected = requests.stream()
+                    .peek(request -> request.setStatus(StatusRequest.REJECTED))
+                    .collect(Collectors.toList());
+            return new EventRequestStatusUpdateResult(confirmed, rejected);
+        }
+        if (event.getParticipantLimit() == 0 || Boolean.TRUE.equals(!event.getRequestModeration())) {
+            confirmed = requests.stream()
+                    .peek(request -> request.setStatus(dto.getStatus()))
+                    .collect(Collectors.toList());
+            return new EventRequestStatusUpdateResult(confirmed, rejected);
+        }
+
+        for (ParticipationRequestDto request : requests) {
+            if (request.getStatus().equals((StatusRequest.PENDING))) {
+                if (event.getParticipantLimit() != confirmedRequests.size()) {
+                    request.setStatus(StatusRequest.CONFIRMED);
+                    confirmed.add(request);
+                    event.setConfirmedRequests(requestService.findRequestByStatus(StatusRequest.CONFIRMED));
+                } else {
+                    request.setStatus(StatusRequest.REJECTED);
+                    rejected.add(request);
+                }
             }
-            if (Objects.equals(event.getParticipantLimit(), event.getConfirmedRequests()) && dto.getStatus() == StatusRequest.CONFIRMED) {
-                request.setStatus(StatusRequest.CONFIRMED);
-                result.getConfirmedRequests().add(request);
-                requestService.updateRequest(request.getId(), StatusRequest.CONFIRMED);
-            } else {
-                request.setStatus(StatusRequest.REJECTED);
-                result.getRejectedRequests().add(request);
-            }
-
         }
-        return result;
+        return new EventRequestStatusUpdateResult(confirmed, rejected);
     }
 
     @Override
-    public List<RequestDto> getRequests(Long userId, Long eventId) {
-        return requestService.findAllMemberRequests(userId, eventId);
+    public List<ParticipationRequestDto> getRequests(Long userId, Long eventId) {
+        User user = checkUser(userId);
+        Event event = getEventById(eventId);
+        if (!event.getInitiator().getId().equals(user.getId())) {
+            throw new EventException(INITIATOR_EXCEPTION);
+        }
+        return requestService.findAllRequests(eventId);
     }
 
     @Override
-    public Event getEvent(Long eventId) {
-        return repository.findById(eventId).orElseThrow(() -> new NotFoundException("Event with id " + eventId +
+    public EventFullDto getEvent(Long eventId, HttpServletRequest request) {
+        sendStatistic(request);
+        Event event = repository.findById(eventId).orElseThrow(() -> new NotFoundException("Event with id " + eventId +
                 " doesn't exist"));
+        setView(event);
+        return makeEventFullDto(event);
     }
 
     private void sendStatistic(HttpServletRequest request) {
@@ -252,7 +246,7 @@ public class EventServiceImpl implements EventService {
         client.save(statDto);
     }
 
-    private void setView(List<Event> events) {
+    private void setViewForList(List<Event> events) {
         LocalDateTime start = events.get(0).getCreatedOn();
         List<String> uris = new ArrayList<>();
         Map<String, Event> eventsUri = new HashMap<>();
@@ -267,10 +261,31 @@ public class EventServiceImpl implements EventService {
             event.setViews(0L);
         }
 
-        List<ResponseStatDto> stats = client.getStatistics(start, LocalDateTime.now(), uris, false).getBody();
+        List<ResponseStatDto> stats = getStatistic(start, LocalDateTime.now(), uris);
         if (stats != null) {
             stats.forEach(stat ->
                     eventsUri.get(stat.getUri()).setViews(stat.getHits()));
         }
+    }
+
+    private void setView(Event event) {
+        List<String> uris = List.of("/events/" + event.getId());
+
+        List<ResponseStatDto> stats = getStatistic(event.getCreatedOn(), LocalDateTime.now(), uris);
+        if (stats.size() == 1) {
+            event.setViews(stats.get(0).getHits());
+        } else {
+            event.setViews(0L);
+        }
+    }
+
+    private List<ResponseStatDto> getStatistic(LocalDateTime startTime, LocalDateTime endTime, List<String> uris) {
+        return client.getStatistics(startTime, endTime, uris, false).getBody() == null ?
+                Collections.emptyList() :
+                client.getStatistics(startTime, endTime, uris, false).getBody();
+    }
+
+    private User checkUser(Long userId) {
+        return userService.getUserById(userId);
     }
 }
