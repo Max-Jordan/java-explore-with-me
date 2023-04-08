@@ -28,7 +28,6 @@ public class EventControllerForAdmin {
                                     @Valid @RequestBody UpdateEventAdminRequest dto) {
         log.info("Received a request to update event with id {} from admin", eventId);
         return service.updateEvent(eventId, dto);
-
     }
 
     @GetMapping

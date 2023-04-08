@@ -61,7 +61,7 @@ public class EventServiceImpl implements EventService {
         rangeStart = rangeStart == null ? LocalDateTime.now() : rangeStart;
         rangeEnd = rangeEnd == null ? LocalDateTime.now().plusHours(2) : rangeEnd;
         List<Event> events = onlyAvailable ?
-                repository.findEventByAvailable(text, paid, rangeStart, rangeEnd, categories, makePageable(from, size))
+                repository.findEventsByAvailable(text, paid, rangeStart, rangeEnd, categories, makePageable(from, size))
                         .stream()
                         .filter(event -> event.getParticipantLimit() > requestService.findAllRequests(event.getId()).size())
                         .collect(Collectors.toList()) :
@@ -100,13 +100,13 @@ public class EventServiceImpl implements EventService {
         if (dto.getStateAction() != null) {
             switch (dto.getStateAction()) {
                 case PUBLISH_EVENT:
-                    if (!event.getState().equals(StatusEvent.PENDING)) {
+                    if (event.getState() != StatusEvent.PENDING) {
                         throw new EventException("Event cannot be published");
                     }
                     event.setState(StatusEvent.PUBLISHED);
                     break;
                 case REJECT_EVENT:
-                    if (event.getState().equals(StatusEvent.PUBLISHED)) {
+                    if (event.getState() == StatusEvent.PUBLISHED) {
                         throw new EventException("It is not possible to cancel the event");
                     }
                     event.setState(StatusEvent.CANCELED);

@@ -18,8 +18,8 @@ import java.util.Map;
 @Component
 @Slf4j
 public class StatisticClient {
-    private static final String URL = "http://localhost:9090/";
 
+    private static final String URL = "http://localhost:9090/";
     private final RestTemplate restTemplate;
 
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
