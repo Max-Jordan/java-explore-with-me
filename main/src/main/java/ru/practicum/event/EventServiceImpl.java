@@ -84,9 +84,6 @@ public class EventServiceImpl implements EventService {
                                                              LocalDateTime rangeStart, LocalDateTime rangeEnd, Integer from, Integer size) {
         Page<Event> page = repository.findEventByInitiatorIdAndStateAndCategory_IdAndEventDateBetween(users, states, categoriesId,
                 rangeStart, rangeEnd, makePageable(from, size));
-        if (page.hasContent()) {
-            setView(page.getContent());
-        }
         return page.stream().map(EventMapper::makeEventFullDto).collect(Collectors.toList());
     }
 
@@ -232,8 +229,6 @@ public class EventServiceImpl implements EventService {
     public EventFullDto getEvent(Long eventId, HttpServletRequest request) {
         Event event = repository.findById(eventId).orElseThrow(() -> new NotFoundException("Event with id " + eventId +
                 " doesn't exist"));
-        sendStatistic(event, request);
-        setView(event);
         return makeEventFullDto(event);
     }
 
