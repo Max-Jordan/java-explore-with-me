@@ -7,11 +7,13 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.client.HttpServerErrorException;
 import ru.practicum.constants.DatePattern;
 
 import javax.validation.ValidationException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 
 @RestControllerAdvice
 public class ExceptionController {
@@ -72,5 +74,14 @@ public class ExceptionController {
     public ApiError handleHttpMessageNotReadableException(final HttpMessageNotReadableException e) {
         return new ApiError(e.getMessage(), "The required data was not sent in the request",
                 HttpStatus.CREATED.getReasonPhrase(), LocalDateTime.now().format(dateFormatter));
+    }
+
+    @ExceptionHandler
+    @ResponseBody
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ApiError handleInternalServerError(final HttpServerErrorException.InternalServerError e) {
+        return new ApiError(e.getMessage(), Arrays.toString(e.getStackTrace()),
+                HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(),
+                LocalDateTime.now().format(dateFormatter));
     }
 }
