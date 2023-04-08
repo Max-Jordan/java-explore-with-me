@@ -230,10 +230,8 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public EventFullDto getEvent(Long eventId, HttpServletRequest request) {
-        sendStatistic(request);
         Event event = repository.findById(eventId).orElseThrow(() -> new NotFoundException("Event with id " + eventId +
                 " doesn't exist"));
-        setView(event);
         return makeEventFullDto(event);
     }
 
