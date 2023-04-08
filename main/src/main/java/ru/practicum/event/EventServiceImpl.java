@@ -2,7 +2,6 @@ package ru.practicum.event;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import ru.practicum.StatisticClient;
 import ru.practicum.category.CategoryService;
@@ -231,68 +230,94 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public EventFullDto getEvent(Long eventId, HttpServletRequest request) {
-        sendStatistic(request);
         Event event = repository.findById(eventId).orElseThrow(() -> new NotFoundException("Event with id " + eventId +
                 " doesn't exist"));
-        setView(List.of(event));
+        sendStatistic(event, request);
+        setView(event);
         return makeEventFullDto(event);
     }
 
-    private void sendStatistic(HttpServletRequest request) {
-        RequestStatDto statDto = new RequestStatDto();
-        statDto.setApp("main");
-        statDto.setIp(request.getRemoteAddr());
-        statDto.setUri(request.getRequestURI());
-        statDto.setTimestamp(LocalDateTime.now());
-        client.save(statDto);
+    public void sendStatistic(Event event, HttpServletRequest request) {
+        String nameService = "main-service";
+
+        RequestStatDto requestDto = new RequestStatDto();
+        requestDto.setTimestamp(LocalDateTime.now());
+        requestDto.setUri("/events");
+        requestDto.setApp(nameService);
+        requestDto.setIp(request.getRemoteAddr());
+        client.save(requestDto);
+        sendStatForTheEvent(event.getId(), request.getRemoteAddr(), LocalDateTime.now(), nameService);
     }
 
-    private void setView(List<Event> events) {
+    public void sendStatistic(List<Event> events, HttpServletRequest request) {
+        LocalDateTime now = LocalDateTime.now();
+        String nameService = "main-service";
+
+        RequestStatDto requestDto = new RequestStatDto();
+        requestDto.setTimestamp(now);
+        requestDto.setUri("/events");
+        requestDto.setApp(nameService);
+        requestDto.setIp(request.getRemoteAddr());
+        client.save(requestDto);
+        sendStatForEveryEvent(events, request.getRemoteAddr(), LocalDateTime.now(), nameService);
+    }
+
+    private void sendStatForTheEvent(Long eventId, String remoteAddr, LocalDateTime now,
+                                     String nameService) {
+        RequestStatDto requestDto = new RequestStatDto();
+        requestDto.setTimestamp(now);
+        requestDto.setUri("/events/" + eventId);
+        requestDto.setApp(nameService);
+        requestDto.setIp(remoteAddr);
+        client.save(requestDto);
+    }
+
+    private void sendStatForEveryEvent(List<Event> events, String remoteAddr, LocalDateTime now,
+                                       String nameService) {
+        for (Event event : events) {
+            RequestStatDto requestDto = new RequestStatDto();
+            requestDto.setTimestamp(now);
+            requestDto.setUri("/events/" + event.getId());
+            requestDto.setApp(nameService);
+            requestDto.setIp(remoteAddr);
+            client.save(requestDto);
+        }
+    }
+
+    public void setView(List<Event> events) {
+        LocalDateTime start = events.get(0).getCreatedOn();
         List<String> uris = new ArrayList<>();
-        events.forEach((e) ->
-                uris.add("/events/" + e.getId())
-        );
-        ResponseEntity<List<ResponseStatDto>> response;
-        List<ResponseStatDto> stats = new ArrayList<>();
-        try {
-            response = client.getStatistics(LocalDateTime.of(2000, 1, 1,
-                    0, 0), LocalDateTime.now(), uris, false);
-
-            stats = response.getBody();
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
-        }
-        if (stats != null && !stats.isEmpty()) {
-            for (Event e : events) {
-                for (ResponseStatDto dto : stats) {
-                    String[] words = dto.getUri().split("/");
-                    if (Integer.parseInt(words[2]) == e.getId()) {
-                        e.setViews(dto.getHits());
-                    }
-                }
+        Map<String, Event> eventsUri = new HashMap<>();
+        String uri = "";
+        for (Event event : events) {
+            if (start.isBefore(event.getCreatedOn())) {
+                start = event.getCreatedOn();
             }
+            uri = "/events/" + event.getId();
+            uris.add(uri);
+            eventsUri.put(uri, event);
+            event.setViews(0L);
+        }
+
+
+        List<ResponseStatDto> stats = getStats(start, LocalDateTime.now(), uris);
+        stats.forEach((stat) ->
+                eventsUri.get(stat.getUri()).setViews(stat.getHits()));
+    }
+
+    public void setView(Event event) {
+        List<String> uris = List.of("/events/" + event.getId());
+        List<ResponseStatDto> stats = getStats(event.getCreatedOn(), LocalDateTime.now(), uris);
+        if (stats.size() == 1) {
+            event.setViews(stats.get(0).getHits());
         } else {
-            events.forEach(e -> e.setViews(0L));
+            event.setViews(0L);
         }
     }
 
-
-//    private void setView(Event event) {
-//        List<String> uris = List.of("/events/" + event.getId());
-//
-//        List<ResponseStatDto> stats = getStatistic(event.getCreatedOn(), LocalDateTime.now(), uris);
-//        if (stats.size() == 1) {
-//            event.setViews(stats.get(0).getHits());
-//        } else {
-//            event.setViews(0L);
-//        }
-//    }
-//
-//    private List<ResponseStatDto> getStatistic(LocalDateTime startTime, LocalDateTime endTime, List<String> uris) {
-//        return client.getStatistics(startTime, endTime, uris, false).getBody() == null ?
-//                Collections.emptyList() :
-//                client.getStatistics(startTime, endTime, uris, false).getBody();
-//    }
+    private List<ResponseStatDto> getStats(LocalDateTime startTime, LocalDateTime endTime, List<String> uris) {
+        return client.getStatistic(startTime, endTime, uris, false);
+    }
 
     private User checkUser(Long userId) {
         return userService.getUserById(userId);
