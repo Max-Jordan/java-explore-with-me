@@ -2,6 +2,7 @@ package ru.practicum.event;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import ru.practicum.StatisticClient;
 import ru.practicum.category.CategoryService;
@@ -85,7 +86,7 @@ public class EventServiceImpl implements EventService {
         Page<Event> page = repository.findEventByInitiatorIdAndStateAndCategory_IdAndEventDateBetween(users, states, categoriesId,
                 rangeStart, rangeEnd, makePageable(from, size));
         if (page.hasContent()) {
-            setViewForList(page.getContent());
+            setView(page.getContent());
         }
         return page.stream().map(EventMapper::makeEventFullDto).collect(Collectors.toList());
     }
@@ -230,8 +231,10 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public EventFullDto getEvent(Long eventId, HttpServletRequest request) {
+        sendStatistic(request);
         Event event = repository.findById(eventId).orElseThrow(() -> new NotFoundException("Event with id " + eventId +
                 " doesn't exist"));
+        setView(List.of(event));
         return makeEventFullDto(event);
     }
 
@@ -244,44 +247,52 @@ public class EventServiceImpl implements EventService {
         client.save(statDto);
     }
 
-    private void setViewForList(List<Event> events) {
-        LocalDateTime start = events.get(0).getCreatedOn();
+    private void setView(List<Event> events) {
         List<String> uris = new ArrayList<>();
-        Map<String, Event> eventsUri = new HashMap<>();
-        String uri = "";
-        for (Event event : events) {
-            if (start.isBefore(event.getCreatedOn())) {
-                start = event.getCreatedOn();
+        events.forEach((e) ->
+                uris.add("/events/" + e.getId())
+        );
+        ResponseEntity<List<ResponseStatDto>> response;
+        List<ResponseStatDto> stats = new ArrayList<>();
+        try {
+            response = client.getStatistics(LocalDateTime.of(2000, 1, 1,
+                    0, 0), LocalDateTime.now(), uris, false);
+
+            stats = response.getBody();
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
+        if (stats != null && !stats.isEmpty()) {
+            for (Event e : events) {
+                for (ResponseStatDto dto : stats) {
+                    String[] words = dto.getUri().split("/");
+                    if (Integer.parseInt(words[2]) == e.getId()) {
+                        e.setViews(dto.getHits());
+                    }
+                }
             }
-            uri = "/events/" + event.getId();
-            uris.add(uri);
-            eventsUri.put(uri, event);
-            event.setViews(0L);
-        }
-
-        List<ResponseStatDto> stats = getStatistic(start, LocalDateTime.now(), uris);
-        if (stats != null) {
-            stats.forEach(stat ->
-                    eventsUri.get(stat.getUri()).setViews(stat.getHits()));
-        }
-    }
-
-    private void setView(Event event) {
-        List<String> uris = List.of("/events/" + event.getId());
-
-        List<ResponseStatDto> stats = getStatistic(event.getCreatedOn(), LocalDateTime.now(), uris);
-        if (stats.size() == 1) {
-            event.setViews(stats.get(0).getHits());
         } else {
-            event.setViews(0L);
+            events.forEach(e -> e.setViews(0L));
         }
     }
 
-    private List<ResponseStatDto> getStatistic(LocalDateTime startTime, LocalDateTime endTime, List<String> uris) {
-        return client.getStatistics(startTime, endTime, uris, false).getBody() == null ?
-                Collections.emptyList() :
-                client.getStatistics(startTime, endTime, uris, false).getBody();
-    }
+
+//    private void setView(Event event) {
+//        List<String> uris = List.of("/events/" + event.getId());
+//
+//        List<ResponseStatDto> stats = getStatistic(event.getCreatedOn(), LocalDateTime.now(), uris);
+//        if (stats.size() == 1) {
+//            event.setViews(stats.get(0).getHits());
+//        } else {
+//            event.setViews(0L);
+//        }
+//    }
+//
+//    private List<ResponseStatDto> getStatistic(LocalDateTime startTime, LocalDateTime endTime, List<String> uris) {
+//        return client.getStatistics(startTime, endTime, uris, false).getBody() == null ?
+//                Collections.emptyList() :
+//                client.getStatistics(startTime, endTime, uris, false).getBody();
+//    }
 
     private User checkUser(Long userId) {
         return userService.getUserById(userId);
