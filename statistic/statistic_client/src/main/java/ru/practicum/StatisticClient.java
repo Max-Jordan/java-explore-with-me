@@ -12,6 +12,7 @@ import ru.practicum.statistic.ResponseStatDto;
 import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -46,7 +47,7 @@ public class StatisticClient extends BaseClient {
         );
         ResponseEntity<Object> response = get(url, parameters);
 
-        List<ResponseStatDto> viewStatsList = response.hasBody() ? (List<ResponseStatDto>) response.getBody() : List.of();
+        List<ResponseStatDto> viewStatsList = response.hasBody() ? (List<ResponseStatDto>) response.getBody() : Collections.EMPTY_LIST;
         return viewStatsList != null && !viewStatsList.isEmpty() ? viewStatsList.get(0).getHits() : 0L;
     }
 
@@ -60,6 +61,6 @@ public class StatisticClient extends BaseClient {
                 "unique", "false"
         );
         ResponseEntity<Object> response = get(url, parameters);
-        return response.hasBody() ? (List<ResponseStatDto>) response.getBody() : List.of();
+        return response.hasBody() ? (List<ResponseStatDto>) response.getBody() : Collections.EMPTY_LIST;
     }
 }
