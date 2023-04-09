@@ -237,6 +237,7 @@ public class EventServiceImpl implements EventService {
         event.setViews(client.getViewForEvent(event.getId()));
         return makeEventFullDto(event);
     }
+
     private User checkUser(Long userId) {
         return userService.getUserById(userId);
     }
