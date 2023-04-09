@@ -34,4 +34,9 @@ public class StatisticController {
                 start, end, uris, unique);
         return service.getStatistics(start, end, uris, unique);
     }
+
+    @GetMapping("/test")
+    public String test() {
+        return "Test";
+    }
 }

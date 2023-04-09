@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 @Service
 public class StatisticClient extends BaseClient {
     @Autowired
-    public StatisticClient(@Value("${stats-server.url}") String url, RestTemplateBuilder builder) {
+    public StatisticClient(@Value("${statistic-server.url}") String url, RestTemplateBuilder builder) {
         super(builder
                 .uriTemplateHandler(new DefaultUriBuilderFactory(url))
                 .requestFactory(HttpComponentsClientHttpRequestFactory::new)
