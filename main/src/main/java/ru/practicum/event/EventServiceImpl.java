@@ -20,7 +20,6 @@ import ru.practicum.request.dto.EventRequestStatusUpdateRequest;
 import ru.practicum.request.dto.EventRequestStatusUpdateResult;
 import ru.practicum.request.dto.ParticipationRequestDto;
 import ru.practicum.request.dto.StatusRequest;
-import ru.practicum.statistic.RequestStatDto;
 import ru.practicum.statistic.ResponseStatDto;
 import ru.practicum.user.UserService;
 import ru.practicum.user.model.User;
@@ -29,7 +28,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static ru.practicum.mapper.CategoryMapper.makeCategory;
@@ -74,6 +76,8 @@ public class EventServiceImpl implements EventService {
                 events = events.stream().sorted(Comparator.comparing(Event::getViews)).collect(Collectors.toList());
             }
         }
+        client.save(request);
+        addViews(events);
         return events.stream()
                 .map(EventMapper::makeEventFullDto)
                 .collect(Collectors.toList());
@@ -229,92 +233,17 @@ public class EventServiceImpl implements EventService {
     public EventFullDto getEvent(Long eventId, HttpServletRequest request) {
         Event event = repository.findById(eventId).orElseThrow(() -> new NotFoundException("Event with id " + eventId +
                 " doesn't exist"));
+        client.save(request);
+        event.setViews(client.getViewForEvent(event.getId()));
         return makeEventFullDto(event);
     }
-
-    public void sendStatistic(Event event, HttpServletRequest request) {
-        String nameService = "main-service";
-
-        RequestStatDto requestDto = new RequestStatDto();
-        requestDto.setTimestamp(LocalDateTime.now());
-        requestDto.setUri("/events");
-        requestDto.setApp(nameService);
-        requestDto.setIp(request.getRemoteAddr());
-        client.save(requestDto);
-        sendStatForTheEvent(event.getId(), request.getRemoteAddr(), LocalDateTime.now(), nameService);
-    }
-
-    public void sendStatistic(List<Event> events, HttpServletRequest request) {
-        LocalDateTime now = LocalDateTime.now();
-        String nameService = "main-service";
-
-        RequestStatDto requestDto = new RequestStatDto();
-        requestDto.setTimestamp(now);
-        requestDto.setUri("/events");
-        requestDto.setApp(nameService);
-        requestDto.setIp(request.getRemoteAddr());
-        client.save(requestDto);
-        sendStatForEveryEvent(events, request.getRemoteAddr(), LocalDateTime.now(), nameService);
-    }
-
-    private void sendStatForTheEvent(Long eventId, String remoteAddr, LocalDateTime now,
-                                     String nameService) {
-        RequestStatDto requestDto = new RequestStatDto();
-        requestDto.setTimestamp(now);
-        requestDto.setUri("/events/" + eventId);
-        requestDto.setApp(nameService);
-        requestDto.setIp(remoteAddr);
-        client.save(requestDto);
-    }
-
-    private void sendStatForEveryEvent(List<Event> events, String remoteAddr, LocalDateTime now,
-                                       String nameService) {
-        for (Event event : events) {
-            RequestStatDto requestDto = new RequestStatDto();
-            requestDto.setTimestamp(now);
-            requestDto.setUri("/events/" + event.getId());
-            requestDto.setApp(nameService);
-            requestDto.setIp(remoteAddr);
-            client.save(requestDto);
-        }
-    }
-
-    public void setView(List<Event> events) {
-        LocalDateTime start = events.get(0).getCreatedOn();
-        List<String> uris = new ArrayList<>();
-        Map<String, Event> eventsUri = new HashMap<>();
-        String uri = "";
-        for (Event event : events) {
-            if (start.isBefore(event.getCreatedOn())) {
-                start = event.getCreatedOn();
-            }
-            uri = "/events/" + event.getId();
-            uris.add(uri);
-            eventsUri.put(uri, event);
-            event.setViews(0L);
-        }
-
-
-        List<ResponseStatDto> stats = getStats(start, LocalDateTime.now(), uris);
-        stats.forEach((stat) ->
-                eventsUri.get(stat.getUri()).setViews(stat.getHits()));
-    }
-
-    public void setView(Event event) {
-        List<String> uris = List.of("/events/" + event.getId());
-        List<ResponseStatDto> stats = getStats(event.getCreatedOn(), LocalDateTime.now(), uris);
-        if (stats.size() == 1) {
-            event.setViews(stats.get(0).getHits());
-        } else {
-            event.setViews(0L);
-        }
-    }
-
-    private List<ResponseStatDto> getStats(LocalDateTime startTime, LocalDateTime endTime, List<String> uris) {
-        return client.getStatistic(startTime, endTime, uris, false);
-    }
-
     private User checkUser(Long userId) {
         return userService.getUserById(userId);
+    }
+
+    private void addViews(List<Event> events) {
+        Map<Long, Event> eventMap = events.stream().collect(Collectors.toMap(Event::getId, event -> event));
+        List<ResponseStatDto> views = client.getAllView(eventMap.keySet());
+        views.forEach(h -> eventMap.get(Long.parseLong(h.getUri().split("/")[1])).setViews(h.getHits()));
     }
 }
