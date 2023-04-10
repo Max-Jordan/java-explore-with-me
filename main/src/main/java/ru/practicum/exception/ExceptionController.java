@@ -7,13 +7,11 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.client.HttpServerErrorException;
 import ru.practicum.constants.DatePattern;
 
 import javax.validation.ValidationException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
 
 @RestControllerAdvice
 public class ExceptionController {
