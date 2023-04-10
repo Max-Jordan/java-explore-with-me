@@ -35,20 +35,17 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
-    @Transactional
     public CategoryDto saveCategory(CategoryDto dto) {
         return makeCategoryDto(repository.save(makeCategory(dto)));
     }
 
     @Override
-    @Transactional
     public CategoryDto updateCategory(CategoryDto dto, Long catId) {
         dto.setId(catId);
         return makeCategoryDto(repository.saveAndFlush(makeCategory(dto)));
     }
 
     @Override
-    @Transactional
     public void deleteCategory(Long catId) {
         repository.delete(makeCategory(getCategory(catId)));
     }
