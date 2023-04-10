@@ -75,13 +75,4 @@ public class ExceptionController {
         return new ApiError(e.getMessage(), "The required data was not sent in the request",
                 HttpStatus.CREATED.getReasonPhrase(), LocalDateTime.now().format(dateFormatter));
     }
-
-    @ExceptionHandler
-    @ResponseBody
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public ApiError handleInternalServerError(final HttpServerErrorException.InternalServerError e) {
-        return new ApiError(e.getMessage(), Arrays.toString(e.getStackTrace()),
-                HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(),
-                LocalDateTime.now().format(dateFormatter));
-    }
 }
