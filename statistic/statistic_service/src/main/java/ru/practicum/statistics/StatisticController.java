@@ -23,7 +23,7 @@ public class StatisticController {
     @ResponseStatus(HttpStatus.CREATED)
     public RequestStatDto add(@Valid @RequestBody RequestStatDto dto) {
         log.info("Received a request to save statistics {}", dto);
-       return service.save(dto);
+        return service.save(dto);
     }
 
     @GetMapping("/stats")
