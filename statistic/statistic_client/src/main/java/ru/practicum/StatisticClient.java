@@ -32,7 +32,8 @@ public class StatisticClient extends BaseClient {
 
     public void save(HttpServletRequest request) {
         String app = "main-app";
-        NewStat newStat = new NewStat(app, request.getRequestURI(), request.getRemoteAddr());
+        NewStat newStat = new NewStat(app, request.getRequestURI(), request.getRemoteAddr(),
+                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
         post("/hit", newStat);
     }
 

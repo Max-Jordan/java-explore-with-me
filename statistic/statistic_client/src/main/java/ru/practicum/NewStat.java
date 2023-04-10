@@ -19,4 +19,5 @@ public class NewStat {
     private String uri;
     @NotBlank
     private String ip;
+    private String timestamp;
 }
