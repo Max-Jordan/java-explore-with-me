@@ -65,7 +65,7 @@ public class CommentServiceImpl implements CommentService {
     public CommentDto updateById(Long userId, Long commentId, UpdateCommentDto dto) {
         userService.getUserById(userId);
         Comment comment = getComment(commentId);
-        if(!Objects.equals(comment.getAuthor().getId(), userId)) {
+        if (!Objects.equals(comment.getAuthor().getId(), userId)) {
             throw new CommentException("This comment belong to another user");
         }
         comment.setText(dto.getText());
@@ -88,7 +88,7 @@ public class CommentServiceImpl implements CommentService {
     @Override
     public void deleteCommentByUser(Long userId, Long commentId) {
         Comment comment = getComment(commentId);
-        if(!Objects.equals(comment.getAuthor().getId(), userService.getUserById(userId).getId())) {
+        if (!Objects.equals(comment.getAuthor().getId(), userService.getUserById(userId).getId())) {
             throw new CommentException("This comment belong to another user");
         }
         repository.deleteById(commentId);

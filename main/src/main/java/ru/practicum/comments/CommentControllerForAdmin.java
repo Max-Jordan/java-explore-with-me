@@ -17,8 +17,8 @@ public class CommentControllerForAdmin {
     @PatchMapping
     public CommentDto updateAvailable(@PathVariable Long commentId,
                                       @RequestParam boolean available) {
-        log.info("Received a request to update status comment {} to status {} confirmed(true)/rejected(false)"
-                , commentId, available);
+        log.info("Received a request to update status comment {} to status {} confirmed(true)/rejected(false)",
+                commentId, available);
         return service.updateAvailable(available, commentId);
     }
 
