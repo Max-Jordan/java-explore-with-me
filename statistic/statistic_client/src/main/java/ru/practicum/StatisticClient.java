@@ -1,59 +1,67 @@
 package ru.practicum;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.*;
-import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
-import ru.practicum.statistic.RequestStatDto;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
+import org.springframework.stereotype.Service;
+import org.springframework.web.util.DefaultUriBuilderFactory;
+import ru.practicum.statistic.ResponseStatDto;
 
+import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
-@RequiredArgsConstructor
-@Component
-@Slf4j
-public class StatisticClient {
-    private static final String URL = "http://localhost:9090/";
-
-    private final RestTemplate restTemplate;
-
-    private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-
-    public void save(RequestStatDto stat) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<RequestStatDto> requestEntity = new HttpEntity<>(stat, headers);
-        restTemplate.exchange(URL + "hit", HttpMethod.POST, requestEntity, RequestStatDto.class);
+@Service
+public class StatisticClient extends BaseClient {
+    @Autowired
+    public StatisticClient(@Value("${statistic-server.url}") String url, RestTemplateBuilder builder) {
+        super(builder
+                .uriTemplateHandler(new DefaultUriBuilderFactory(url))
+                .requestFactory(HttpComponentsClientHttpRequestFactory::new)
+                .build());
     }
 
-    public ResponseEntity<List<RequestStatDto>> getStatistics(LocalDateTime start, LocalDateTime end, List<String> uris,
-                                                              Boolean unique) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setAccept(List.of(MediaType.APPLICATION_JSON));
-        HttpEntity<Object> requestEntity = new HttpEntity<>(headers);
+    private static final DateTimeFormatter format = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-        StringBuilder urisFull = new StringBuilder();
-        for (int i = 0; i < uris.size(); i++) {
-            if (i < (uris.size() - 1)) {
-                urisFull.append("uris").append("=").append(uris.get(i)).append(",");
-            } else {
-                urisFull.append("uris").append("=").append(uris.get(i));
-            }
-        }
+    public void save(HttpServletRequest request) {
+        String app = "main-app";
+        NewStat newStat = new NewStat(app, request.getRequestURI(), request.getRemoteAddr(),
+                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        post("/hit", newStat);
+    }
+
+    public Long getViewForEvent(Long eventId) {
+        String url = "/stats?start={start}&end={end}&uris={uris}&unique={unique}";
+
         Map<String, Object> parameters = Map.of(
-                "start", start.format(formatter),
-                "end", end.format(formatter),
-                "uris", urisFull.toString(),
-                "unique", unique);
+                "start", LocalDateTime.now().minusYears(10).format(format),
+                "end", LocalDateTime.now().plusYears(10).format(format),
+                "uris", (List.of("/events/" + eventId)),
+                "unique", "false"
+        );
+        ResponseEntity<Object> response = get(url, parameters);
 
-        String uri = URL + "stats" + "?start={start}&end={end}&uris={uris}&unique={unique}";
-        return restTemplate.exchange(uri, HttpMethod.GET, requestEntity,
-                new ParameterizedTypeReference<List<RequestStatDto>>() {
-                }, parameters);
+        List<ResponseStatDto> viewStatsList = response.hasBody() ? (List<ResponseStatDto>) response.getBody() : Collections.EMPTY_LIST;
+        return viewStatsList != null && !viewStatsList.isEmpty() ? viewStatsList.get(0).getHits() : 0L;
+    }
+
+    public List<ResponseStatDto> getAllView(Set<Long> eventsId) {
+        String url = "/stats?start={start}&end={end}&uris={uris}&unique={unique}";
+
+        Map<String, Object> parameters = Map.of(
+                "start",  LocalDateTime.now().minusYears(10).format(format),
+                "end", LocalDateTime.now().plusYears(10).format(format),
+                "uris", (eventsId.stream().map(id -> "/events/" + id).collect(Collectors.toList())),
+                "unique", "false"
+        );
+        ResponseEntity<Object> response = get(url, parameters);
+        return response.hasBody() ? (List<ResponseStatDto>) response.getBody() : Collections.EMPTY_LIST;
     }
 }

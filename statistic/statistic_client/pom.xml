@@ -17,6 +17,11 @@
         <groupId>ru.practicum</groupId>
         <artifactId>dto</artifactId>
     </dependency>
+
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+        </dependency>
     </dependencies>
 
 </project>
